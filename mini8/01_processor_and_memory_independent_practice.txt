@@ -1,0 +1,293 @@
+MINI-8: INDEPENDENT PRACTICE AFTER LECTURE 1
+The processor, registers, and memory
+Companion notebook: 01_processor_and_memory.ipynb
+======================================================================
+
+Complete this assignment on your own after working through Lecture 1 and
+its notebook with your teacher. The aim is to explain what each
+instruction does, not just to obtain the correct final output.
+
+Estimated time: 60-90 minutes for Tasks 1-7. Task 8 is an optional challenge.
+You may consult the lecture slides, notebook, and MINI-8 README.
+
+For every experiment, follow this order:
+1. Write down your prediction before running the program.
+2. Run or step through the program to check it.
+3. Explain any difference between your prediction and the actual result.
+
+GETTING STARTED
+----------------------------------------------------------------------
+Save a copy of the lesson notebook as 01_practice_yourname.ipynb in the
+same folder as the original notebook. Run its setup cell in Section 0.
+Add your own Markdown and code cells at the end, labelled by task number.
+Keep both your original predictions and your corrected explanations.
+
+Create a fresh CPU for each new experiment. This Python template is ready
+to use after the setup cell. Replace the comment with your assembly
+instructions, keeping HALT as the final instruction:
+
+source = """
+; Write your MINI-8 instructions here.
+HALT
+"""
+practice_cpu = CPU(source, watch=(20, 21), title="Independent practice")
+practice_cpu.show()
+
+In a separate code cell, use practice_cpu.step() to execute one instruction
+or practice_cpu.run() to continue to HALT. The watch setting displays data
+cells 20 and 21; it does not put any values into those cells.
+
+After editing source, rerun the cell that creates CPU(source, ...).
+practice_cpu.reset() restores the initial state of the program already
+loaded into that CPU; it does not execute it or assemble your edited source.
+Use run() after reset() to execute it again. Calling run() again after HALT
+without a reset does not restart execution.
+
+Use only the instructions introduced in Lecture 1:
+LDI, MOV, ADD, SUB, STORE, LOAD, OUT, HALT, and the .equ directive.
+All numbers in the tasks are decimal unless explicitly marked as binary
+or hexadecimal. M[20] means the value in data-memory cell 20.
+
+
+TASK 1 - EXPLAIN THE MODEL AND READ THE BITS
+----------------------------------------------------------------------
+Notebook reference: Sections 0.1-0.2 and 1.
+
+a) In one or two sentences each, explain the role of the processor, a
+   register, and data memory. Where are the program's instructions kept
+   in MINI-8? What is the difference between an address and its contents?
+
+b) Write 6, 19, and 128 as eight-bit binary numbers. Include leading zeros.
+   Convert these binary numbers to decimal, showing the place values:
+   00001101, 10000001, and 11111111.
+
+c) Add 00000111 and 00000001 on paper. Show the carries and write the
+   result using eight bits. Explain why several bit positions change.
+
+d) Eight bits provide 256 different patterns. Why is the largest unsigned
+   value 255 rather than 256?
+
+Check your conversions only after your first attempt. You may use the
+binary displays in the notebook or Python's format(value, "08b").
+
+
+TASK 2 - TRACE A PROGRAM WITHOUT RUNNING IT FIRST
+----------------------------------------------------------------------
+Notebook reference: Sections 1-5.
+
+Start from a fresh CPU and consider this program:
+
+    LDI R0, 12
+    LDI R1, 7
+    MOV R2, R0
+    ADD R0, R1
+    SUB R2, R1
+    OUT R0
+    OUT R2
+    HALT
+
+a) Number the instructions starting at 0. Make a table with these columns:
+
+   State after instruction | PC | R0 | R1 | R2 | Output so far
+
+   Include an initial-state row and one row after every instruction,
+   including HALT. Record all output values emitted so far in each row.
+
+b) Predict the final PC and the number of executed instructions. Explain
+   why these two numbers differ.
+
+c) Explain whether changing R0 after MOV also changes R2. Identify the
+   instruction that first produces the sum and the instruction that sends
+   that sum to the output. What happens to R3 throughout the program?
+
+d) Verify the table using step(). Then reset the CPU and run the whole
+   program. Check that the final state and output match your stepped run.
+
+
+TASK 3 - INVESTIGATE EIGHT-BIT ARITHMETIC
+----------------------------------------------------------------------
+Notebook reference: Sections 0.3-0.4.
+
+For each calculation, predict the ordinary mathematical result, the
+unsigned value stored by MINI-8, and that stored value in eight-bit binary:
+
+    A. 250 + 20
+    B. 255 + 1
+    C. 3 - 5
+
+Write a short MINI-8 program that performs all three calculations and
+outputs their stored results in order. Load the two input values before
+each calculation so that earlier register contents do not affect it.
+Use ADD or SUB to calculate each result; do not load the answers directly.
+
+Compare your output with your predictions. Explain the wraparound using
+modulo 256. Also explain why ordinary Python arithmetic can give different
+answers and why a stored MINI-8 value of 255 is unsigned in this model.
+
+
+TASK 4 - DISTINGUISH A VALUE, AN ADDRESS, AND A SYMBOL
+----------------------------------------------------------------------
+Notebook reference: Sections 6-8.
+
+Predict the output and final values of R0, R1, R2, and M[20]:
+
+    .equ slot, 20
+    LDI R0, 73
+    STORE [slot], R0
+    LDI R0, 9
+    LDI R1, slot
+    LOAD R2, [slot]
+    OUT R1
+    OUT R2
+    HALT
+
+a) Explain the different meanings of slot in LDI R1, slot and [slot] in
+   LOAD R2, [slot]. Does .equ put a value into data memory?
+
+b) Step through the program. Explain why overwriting R0 does or does not
+   affect the value previously stored in memory. Does LOAD clear its source?
+
+c) Change only .equ slot, 20 to .equ slot, 21. Predict which output value
+   changes and which cell receives 73. Create a fresh CPU and check.
+
+d) Return to slot = 20 and remove the STORE instruction. Predict both
+   outputs before running this version on another fresh CPU. Explain the
+   result using the initial contents of data memory.
+
+
+TASK 5 - WRITE YOUR OWN CALCULATION AND PRESERVE ITS RESULTS
+----------------------------------------------------------------------
+Notebook reference: Sections 5-9.
+
+Write a program that calculates a + b and then (a + b) - c. Start with
+a = 25, b = 14, and c = 6, loaded into R0, R1, and R2 respectively.
+
+Your program must:
+1. Calculate the sum in R0 using ADD.
+2. Copy the sum into R3 using MOV, so that it survives the subtraction.
+3. Store the sum in data cell 20.
+4. Subtract c from R0 using SUB and store the result in data cell 21.
+5. Overwrite R0 with zero, then reload the result from cell 21 into R0.
+6. Output the preserved sum in R3, then the reloaded result in R0, and HALT.
+
+Use .equ sum_cell, 20 and .equ result_cell, 21 for the addresses. Add short
+assembly comments explaining why you copy, store, and reload values.
+
+Test the same program with both sets of inputs below. Change only the
+three initial input values and create a fresh CPU for each test:
+
+    a     b     c     Expected output, in order
+    25    14    6      39, 33
+    200   70    15     14, 255
+
+Check that M[20] equals the first output and M[21] equals the second.
+Explain the second test using the eight-bit rule. Do not replace the
+calculation with precomputed answers, including in the second test.
+
+
+TASK 6 - FIND AND FIX TWO DIFFERENT KINDS OF ERROR
+----------------------------------------------------------------------
+Notebook reference: Sections 3, 6-7, and 10-10.1.
+
+A. This program is intended to output 18 + 4:
+
+    LDI R0, 18
+    LDI R1, 4
+    ADD R0, 4
+    OUT R0
+    HALT
+
+   Identify the invalid instruction and explain what type of operand it
+   requires. Try assembling it, read the error, and correct the program.
+
+B. This program is intended to calculate 18 + 4, store the result in cell
+   20, reload it into R2, and output it:
+
+    LDI R0, 18
+    LDI R1, 4
+    ADD R1, R0
+    STORE [20], R0
+    LDI R2, 20
+    OUT R2
+    HALT
+
+   Predict its actual output and M[20] before running it. Find and correct
+   the mistakes while keeping the inputs and storage address unchanged.
+   Check that both the corrected output and M[20] are 22.
+
+For each correction, show the original line, your replacement, and a short
+reason. Why can the assembler accept B even though it does the wrong job?
+Use the terms syntax and semantics in your explanation.
+
+
+TASK 7 - CONNECT ASSEMBLY TEXT WITH MACHINE BYTES
+----------------------------------------------------------------------
+Notebook reference: Sections 10-10.1.
+
+Use this program as source:
+
+    .equ amount, 9
+    ; Add two values.
+    LDI R0, amount
+    LDI R1, 6
+    ADD R0, R1
+    OUT R0
+    HALT
+
+a) Predict the number of executable instructions and the total size in
+   bytes. Explain whether .equ and the comment contribute instructions.
+
+b) Build a table containing the instruction number, starting byte offset,
+   and three hexadecimal bytes for each instruction. Use the reference
+   below; do not copy a simulator listing before making your own attempt.
+
+   Encoding reference: each instruction is [opcode, A, B]. The opcodes and
+   zero bytes below are hexadecimal. Encode the other fields as two-digit
+   hexadecimal bytes too. Register numbers are 0 for R0, 1 for R1, etc.
+
+   Instruction   Opcode   A                    B
+   LDI Rd, n     01       Destination number   Immediate value n
+   ADD Rd, Rs    05       Destination number   Source register number
+   OUT Rs        0D       Source number        00
+   HALT          00       00                   00
+
+c) Verify your answers using these Python controls from the notebook:
+
+practice_cpu = CPU(source)
+practice_cpu.listing()
+print(assemble(source).hex(" "))
+print(len(assemble(source)))
+print(disassemble(assemble(source)))
+
+   Explain why these calls do not execute the MINI-8 program. Do the
+   original comment and the name amount survive disassembly?
+
+d) Change only .equ amount, 9 to .equ amount, 10. Predict exactly which
+   byte changes, its old and new hexadecimal values, and whether the
+   program size changes. Then assemble the edited source and check.
+
+
+TASK 8 - OPTIONAL CHALLENGE: SWAP TWO MEMORY VALUES
+----------------------------------------------------------------------
+Write a program that first stores 17 in cell 20 and 99 in cell 21. Then
+swap the two stored values, using registers as temporary storage. After
+initialization, read the values from memory rather than loading 17 and 99
+again. Use only data cells 20 and 21.
+
+Finally, load and output cell 20, then cell 21. The expected output is
+99, 17. Repeat with initial values 42 and 7; the output should be 7, 42.
+
+Explain how your instruction order prevents either original value from
+being lost before it has been copied to its new location.
+
+
+FINISHING YOUR WORK
+----------------------------------------------------------------------
+Your completed notebook should contain:
+- Your predictions, calculations, and the trace table.
+- Your working programs and saved outputs.
+- Explanations of the changes you observed and the errors you corrected.
+- One question about Lecture 1 that you would like to discuss next time.
+
+Before finishing, run each final program from a fresh CPU. Make sure the
+results do not depend on the order in which you ran earlier experiments.

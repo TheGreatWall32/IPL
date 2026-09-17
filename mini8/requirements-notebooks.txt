@@ -1,0 +1,4 @@
+# Libraries for running the student notebooks (Python 3.10+).
+ipykernel>=6.29,<8
+ipython>=8,<10
+jupyterlab>=4,<5

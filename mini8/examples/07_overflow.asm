@@ -1,0 +1,12 @@
+; (250 + 10) mod 256 = 4.
+LDI R0, 250
+LDI R1, 10
+ADD R0, R1
+OUT R0
+
+; (0 - 1) mod 256 = 255.
+LDI R0, 0
+LDI R1, 1
+SUB R0, R1
+OUT R0
+HALT
