@@ -1,0 +1,392 @@
+MINI-8: INDEPENDENT PRACTICE AFTER LECTURE 2
+Conditionals, loops, and programming languages
+Companion notebook: 02_conditionals_and_loops.ipynb
+======================================================================
+
+Complete this assignment on your own after working through Lecture 2 and
+its notebook with your teacher. Practise explaining why a program follows
+a particular path, not just obtaining the correct output.
+
+For each experiment:
+1. Write down your prediction before running the program.
+2. Run or step through the program to check it.
+3. Explain any difference between your prediction and the actual result.
+
+Keep your original predictions, even if you later correct them. For tasks
+that ask you to write a program, submit your own assembly and explanation.
+This sheet gives requirements and test inputs, not completed solutions.
+
+
+GETTING STARTED
+----------------------------------------------------------------------
+Save a copy of the lesson notebook as 02_practice_yourname.ipynb beside
+mini8.py and notebook_tools.py. Run the setup cell in Section 1 after
+opening the notebook or restarting its kernel. Add your own Markdown
+and code cells at the end, labelled by task number.
+
+After setup, use this Python template for your assembly experiments:
+
+source = """
+; Write your MINI-8 instructions here.
+HALT
+"""
+practice_cpu = CPU(source, title="Lecture 2 practice")
+practice_cpu.show()
+
+Use practice_cpu.step() to execute one instruction, or
+practice_cpu.run(max_steps=100) to continue towards HALT with a limit.
+Create a fresh CPU for each new program or input, except where a task
+explicitly asks you to continue the same processor. After editing source,
+rerun the cell containing CPU(source, ...). Resetting an existing CPU
+does not assemble edited source, and run() does not restart a halted CPU.
+
+Use the instructions from Lectures 1-2, including CMP, JMP, JE, JNE, JL,
+JGE, labels, and .equ. Values are unsigned bytes from 0 to 255. Addition
+and subtraction wrap modulo 256. All numeric values in the tasks are decimal.
+
+The Python-like source examples below use the teaching language's byte
+rules, not unrestricted Python integers. Translate them by hand.
+The project does not provide a higher-level parser or compiler.
+
+
+TASK 1 - FOLLOW THE STORED FLAG AND THE PROGRAM COUNTER
+----------------------------------------------------------------------
+Notebook reference: Sections 1-4.2 and 8.
+
+a) For each pair below, predict the flag after CMP R0, R1. Then state
+   whether each of JE, JNE, JL, and JGE would take its jump immediately
+   afterwards. Present your answers as a table.
+
+       R0     R1
+       2      8
+       8      8
+       255    1
+
+   Explain why the last comparison is unsigned. Does CMP change either
+   register? Does a conditional jump perform another comparison?
+
+b) Trace this program on paper before running it:
+
+       LDI R0, 6
+       LDI R1, 4
+       CMP R0, R1
+       SUB R0, R1
+       JL small
+       LDI R2, 9
+       JMP finish
+   small:
+       LDI R2, 1
+   finish:
+       OUT R2
+       HALT
+
+   Number the instructions from 0. Record the instruction numbers named
+   by small and finish. Explain why labels do not receive their own slots.
+
+   Make a trace table with these columns:
+
+   Executed PC | Instruction | PC after | R0 | R1 | R2 | Flag | Output so far
+
+   Add one row for each instruction actually executed, including HALT.
+   Predict the final output, final PC, and number of executed instructions.
+   Explain which source instruction is skipped and why.
+
+c) Check your trace using step(). Pay particular attention to the flag
+   after SUB. Then insert CMP R0, R1 immediately before JL small.
+   Predict how the branch and output change, then run a fresh CPU to check.
+
+
+TASK 2 - TRANSLATE AN IF/ELSE AND TEST ITS BOUNDARY
+----------------------------------------------------------------------
+Notebook reference: Section 5.
+
+Translate this source-level rule into a complete MINI-8 program:
+
+    if x < 12:
+        y = x + 3
+    else:
+        y = x - 2
+    print(y)
+
+Keep x in R0 and the final y in R2. Load the input at the beginning and
+leave R0 unchanged. Use the remaining registers for the boundary and
+constants. Use labels for the two paths and their shared continuation.
+Output y exactly once and finish with HALT. Do not load a precomputed y.
+
+a) Before coding, draw the two paths or describe them in plain English.
+   Identify the comparison and the condition for entering each path.
+
+b) Test x = 0, 11, 12, and 255. For each input, first predict the chosen
+   path and output. Change only the input value between tests.
+
+c) Identify the unconditional jump that prevents one branch from falling
+   through into the other branch's assignment. In a separate copy, remove
+   that jump and test one input from each path. Explain the resulting mistake.
+
+d) Why is testing exactly x = 12 necessary? Would testing only x = 11
+   and x = 255 be enough to detect every incorrect boundary condition?
+
+
+TASK 3 - MODIFY A LOOP AND ACCOUNT FOR ITS EXECUTION
+----------------------------------------------------------------------
+Notebook reference: Sections 6-7.
+
+Copy the assembly loop from Section 6. Keep its register roles:
+R0 = total, R1 = i, R2 = exclusive bound, R3 = step.
+
+Change only its initialization values to implement this source program:
+
+    total = 0
+    i = 3
+    while i < 16:
+        total = total + i
+        i = i + 3
+    print(total)
+
+a) List the values added to total. Predict the final total, final i,
+   and number of body iterations before executing anything.
+
+b) Execute the four initialization instructions with step(4), then one
+   complete loop iteration with step(5). For each pause, predict and
+   record all four registers and PC. Explain which instruction returns
+   execution to the condition.
+
+c) Continue the same processor to HALT. Make a shorter table with one
+   row for each condition check: i, total, flag, and whether the body
+   runs. Include the final check that exits the loop.
+
+d) Calculate the total number of executed instructions from initialization
+   through HALT. Count the final failed condition check and the output.
+   Verify your count with practice_cpu.steps. Explain why body iterations,
+   executed instructions, and the final PC are different quantities.
+
+e) Using fresh CPUs, change only the initial i to 15 and then to 16.
+   Predict and check the output, final i, and number of body iterations
+   for each. Explain how the program handles zero iterations.
+
+
+TASK 4 - DISTINGUISH TERMINATION FROM A SIMULATOR STOP
+----------------------------------------------------------------------
+Notebook reference: Section 6 and Extension C.
+
+Use your Task 3 program with its original initial values: total = 0,
+i = 3, bound = 16, and step = 3. Create a fresh CPU named limited_cpu.
+Use this Python control code to catch an instruction-limit error:
+
+try:
+    limited_cpu.run(max_steps=10)
+except Mini8Error as error:
+    print(error)
+
+limited_cpu.show()
+print("Executed instructions:", limited_cpu.steps)
+print("Halted:", limited_cpu.halted)
+
+a) Predict the state after those ten executed instructions. Does reaching
+   the limit prove that the program will never finish? Has HALT executed?
+
+b) Without resetting or recreating limited_cpu, call
+   limited_cpu.run(max_steps=80). Predict whether it finishes and whether
+   its final output and total instruction count match Task 3.
+   Explain what run() continues and what max_steps limits on each call.
+
+c) Make a separate version with the step register initially set to zero.
+   Keep the original i and bound. Predict what happens to the loop
+   condition. Run a fresh CPU with a limit of 40, using the same try/except
+   pattern. Explain why the presence of HALT in the source does not
+   guarantee that it will be reached. Restore the correct step afterwards.
+
+d) Reason on paper about another version: initial i = 4, step = 4,
+   bound = 255. What happens to the counter near the top of the byte
+   range? Can it ever make i < 255 false? Support your answer with the
+   counter's repeating pattern, rather than only an instruction-limit
+   error. How would an unbounded-integer counter behave differently?
+
+
+TASK 5 - TRANSLATE AN EXPRESSION AND CHOOSE ITS STORAGE
+----------------------------------------------------------------------
+Notebook reference: Section 9 and Extension B.
+
+Translate this complete source-level program by hand:
+
+    a = 20
+    b = 7
+    c = 4
+    z = a - (b + c)
+    print(z)
+
+Store a, b, c, and z at data addresses 30, 31, 32, and 33 respectively.
+Use .equ names for these addresses. Initialize a, b, and c with STORE;
+then read them from memory to evaluate the expression. Use registers for
+temporary values. Store z in memory, reload it for output, and HALT.
+The memory cells containing a, b, and c must retain their original values.
+
+a) Write a storage map and explain the role of each temporary register.
+   Why do the .equ directives alone not initialize the variables?
+
+b) Add comments identifying the inner addition, outer subtraction,
+   assignment to z, and output. Do not hard-code the expression's answer.
+
+c) Test both input sets below. Predict z and all four final memory cells
+   first. Change only the initialization values between tests.
+
+       a     b     c
+       20    7     4
+       5     9     4
+
+   Create your CPU with watch=(30, 31, 32, 33). Check the memory and output,
+   and explain the second test using the unsigned-byte arithmetic rule.
+
+d) Could another correct translation use different temporary registers
+   or execute a different number of instructions? State which observable
+   results and termination behavior it must preserve.
+
+
+TASK 6 - READ TOKENS, GRAMMAR, AND EXPRESSION TREES
+----------------------------------------------------------------------
+Notebook reference: Section 9.1; lecture slides 20-23.
+
+Use the conceptual grammar from the lecture:
+
+    assignment ::= NAME "=" expression
+    expression ::= atom { ("+" | "-") atom }
+    atom       ::= NAME | NUMBER | "(" expression ")"
+
+Braces mean zero or more repetitions. Ungrouped additions and subtractions
+associate from left to right. This grammar describes a teaching example;
+there is no supplied parser to run for these questions.
+
+a) Write the tokens of z = a - (b + c) in order. Classify each as a name,
+   assignment sign, arithmetic operator, or parenthesis. For z = a + 12,
+   also identify the number token. Is 12 one number token or two?
+
+b) Draw the assignment AST for z = a - (b + c). Include the assignment
+   target and Name, Add, and Sub nodes. Identify which subtree supplies
+   the value subtracted from a. Connect the arithmetic nodes with the
+   relevant instructions in your Task 5 program.
+
+c) Draw a second AST for z = a - b + c. Evaluate both expressions for
+   a = 20, b = 7, c = 4. Explain the different grouping and results.
+
+d) For each statement below, decide whether its token structure fits the
+   grammar. Then consider the separate value and initialization rules.
+   Assume a, b, and c are initialized, but missing is not; z may be new.
+
+       z = a +
+       z = (a + b
+       z = a + missing
+       z = a + 300
+
+   Explain the difference between an invalid structure, a read of an
+   uninitialized variable, and a literal outside the permitted byte range.
+   Do not treat the grammar alone as a complete definition of the language.
+
+
+TASK 7 - SEPARATE SOURCE TRANSLATION FROM EXECUTION
+----------------------------------------------------------------------
+Notebook reference: Sections 10-10.1; lecture slides 19 and 25-27.
+
+a) Put these stages in order, starting with higher-level source text:
+   tokenization, parsing into an AST, code generation, assembly, execution.
+   State what representation enters and leaves each stage. Mark which
+   stages are conceptual/manual in our lessons and which the project
+   actually implements. Where do checks of initialized names and allowed
+   values fit? Why can assemble() not translate the source text in Task 5?
+
+b) Use the assembly source you wrote for Task 2, with x = 11. Run the
+   following Python controls only after predicting what each one does:
+
+from mini8 import Machine, run
+
+code = assemble(source)
+rebuilt_text = disassemble(code)
+machine = Machine(code)
+first_step = machine.step()
+result = run(code)
+
+print("Fresh run output:", result.output)
+print("Fresh run steps:", result.steps)
+print("Separate machine steps:", machine.state().steps)
+print("Binary round trip:", assemble(rebuilt_text) == code)
+
+   Before these calls, set source to your Task 2 assembly string.
+   Identify the calls that execute instructions. Does run(code) continue
+   machine from its first step, or use another processor? Contrast it
+   with the limited_cpu.run(...) calls in Task 4. Does disassembly restore
+   your original label names and comments?
+
+c) Try assembling each malformed program below. Catch Mini8Error as in
+   notebook Section 10.1, so that Run All can still finish. For each,
+   describe the error and write the smallest correction consistent with
+   its comment. Do any MINI-8 instructions execute during assemble()?
+
+       ; Add R1 to R0.
+       ADD R0
+       HALT
+
+       ; Jump to the final HALT.
+       JMP finish
+   done:
+       HALT
+
+   Contrast these assembly errors with the accepted but incorrect branch
+   program from Task 2(c), and with an instruction-limit error in Task 4.
+
+d) In two or three sentences, explain how compilation and interpretation
+   can coexist in one implementation. Use the lecture's CPython bytecode
+   example. Is that bytecode the same instruction set as MINI-8?
+
+
+TASK 8 - OPTIONAL CHALLENGE: COMPARE TWO STORAGE CHOICES
+----------------------------------------------------------------------
+Notebook reference: Extension B.
+
+Rewrite the original Task 3 loop so that total and i live in data-memory
+cells 20 and 21. Initialize them explicitly and store their new values
+after each body iteration. Registers may hold temporary values and
+constants. Keep the same source-level calculation and output.
+
+Compare this version with your register-based program for initial i = 3
+and for the zero-iteration case i = 16. Compare output, final total and i,
+and termination before comparing executed instruction counts.
+
+Explain which extra data transfers your version needs. Why does comparing
+these instruction counts not establish a universal speed ratio between
+register-based and memory-based programs, or measure hardware clock cycles?
+
+
+TASK 9 - OPTIONAL CHALLENGE: MULTIPLICATION BY REPEATED ADDITION
+----------------------------------------------------------------------
+Notebook reference: Extension A.
+
+Write a program that adds an addend to a total count times. Use a counter,
+comparison, conditional exit, repeated addition, and decrement. Do not
+use a multiplication instruction or load the answer directly.
+
+Before coding, explain how you will handle count = 0 without first adding
+the addend or subtracting from the zero counter. Predict and test:
+
+       count    addend
+       4        6
+       0        6
+       20       15
+
+Output the final total and HALT. Use run(max_steps=500) for this task;
+twenty repetitions can require more than 100 instructions. Explain any
+wraparound in the last test. The same algorithm must work for all inputs.
+
+
+FINISHING YOUR WORK
+----------------------------------------------------------------------
+Your completed notebook should contain:
+- Your predictions and the instruction and loop trace tables.
+- Your assembly programs, test inputs, and observed results.
+- Explanations of boundary cases, stored flags, and termination.
+- The storage map, token lists, ASTs, and translation-stage explanation.
+- Your error corrections and a comparison of translation and execution.
+- One question about Lecture 2 that you would like to discuss next time.
+
+Run each final solution from a fresh CPU and save the notebook with its
+outputs. Keep intentional failures in separate, clearly labelled cells
+and catch their expected errors. A correct final solution must not depend
+on register or memory values left over from another experiment.
